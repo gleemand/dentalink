@@ -7,14 +7,16 @@
         "php": ">=7.2.5",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "guzzlehttp/guzzle": "^7.0",
+        "retailcrm/api-client-php": "~6.0",
         "symfony/console": "5.4.*",
         "symfony/dotenv": "5.4.*",
+        "symfony/filesystem": "5.4.*",
         "symfony/flex": "^1.17|^2",
         "symfony/framework-bundle": "5.4.*",
+        "symfony/monolog-bundle": "^3.7",
         "symfony/runtime": "5.4.*",
         "symfony/yaml": "5.4.*"
-    },
-    "require-dev": {
     },
     "config": {
         "allow-plugins": {
@@ -62,6 +64,10 @@
         "symfony": {
             "allow-contrib": false,
             "require": "5.4.*"
-        }
+        },
+        "compile-whitelist": ["retailcrm/api-client-php"]
+    },
+    "require-dev": {
+        "symfony/maker-bundle": "^1.38"
     }
 }
