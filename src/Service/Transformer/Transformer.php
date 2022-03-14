@@ -27,19 +27,31 @@ class Transformer implements TransformerInterface
     {
         $customer = new Customer();
 
-        $customer->externalId = $patient['id'];
-        $customer->firstName = $patient['nombre'] ?? '';
-        $customer->lastName = $patient['apellidos'] ?? '';
-        $customer->phones = [
-            new CustomerPhone($patient['telefono'] ?? ''),
-            new CustomerPhone($patient['celular'] ?? ''),
-        ];
-        $customer->address = new CustomerAddress();
-        $customer->address->city = $patient['ciudad'] ?? '';
-        $customer->address->region = $patient['comuna'] ?? '';
-        $customer->address->text = $patient['direccion'] ?? '';
-        $customer->email = $patient['email'] ?? '';
-        $customer->site = $this->site;
+        $customer->externalId   = $patient['id'];
+        $customer->firstName    = $patient['nombre'] ?? null;
+        $customer->lastName     = $patient['apellidos'] ?? null;
+        $customer->email        = $patient['email'] ?? null;
+        $customer->site         = $this->site;
+        $customer->createdAt    = !empty($patient['fecha_afiliacion'])
+            ? new \DateTime($patient['fecha_afiliacion'])
+            : null;
+        $customer->birthday     = !empty($patient['fecha_nacimiento'])
+            ? new \DateTime($patient['fecha_nacimiento'])
+            : null;
+        $customer->phones       = array_filter([
+            !empty($patient['celular']) ? new CustomerPhone($patient['celular']) : null,
+            !empty($patient['telefono']) ? new CustomerPhone($patient['telefono']) : null,
+        ]);
+        $customer->customFields = array_filter([
+            $this->customFields['iden'] => $patient['rut'] ?? null,
+        ]);
+
+        if (!empty($patient['ciudad']) || !empty($patient['comuna']) || !empty($patient['direccion'])) {
+            $customer->address         = new CustomerAddress();
+            $customer->address->city   = $patient['ciudad'] ?? null;
+            $customer->address->region = $patient['comuna'] ?? null;
+            $customer->address->text   = $patient['direccion'] ?? null;
+        }
 
         return $customer;
     }
@@ -48,20 +60,26 @@ class Transformer implements TransformerInterface
     {
         $order = new Order();
 
-        $order->externalId = $appointment['id'];
-        $order->firstName = $appointment['nombre_paciente'] ?? '';
-        $order->customFields = [
-            $this->customFields['date'] => $appointment['fecha'] ?? '',
-            $this->customFields['time'] => $appointment['hora_inicio'] ?? ''
-                . ' - ' . $appointment['hora_fin'] ?? ''
-                . ' (' . $appointment['duracion'] ?? '' . ')',
-        ];
-        $order->customer = SerializedRelationCustomer::withExternalIdAndType(
+        $order->externalId      = $appointment['id'];
+        $order->firstName       = $appointment['patient']['nombre'] ?? null;
+        $order->lastName        = $appointment['patient']['apellidos'] ?? null;
+        $order->phone           = $appointment['patient']['celular'] ?? null;
+        $order->additionalPhone = $appointment['patient']['telefono'] ?? null;
+        $order->email           = $appointment['patient']['email'] ?? null;
+        $order->site            = $this->site;
+        $order->customer        = SerializedRelationCustomer::withExternalId(
             $appointment['id_paciente'],
-            CustomerType::CUSTOMER,
             $this->site
         );
-        $order->site = $this->site;
+        $order->createdAt       = !empty($appointment['fecha_actualizacion'])
+            ? new \DateTime($appointment['fecha_actualizacion'])
+            : null;
+        $order->customFields    = array_filter([
+            $this->customFields['date'] => $appointment['fecha'] ?? null,
+            $this->customFields['time'] => ($appointment['hora_inicio'] ?? null)
+                . ' - ' . ($appointment['hora_fin'] ?? null)
+                . ' (' . ($appointment['duracion'] ?? null) . ')',
+        ]);
 
         return $order;
     }

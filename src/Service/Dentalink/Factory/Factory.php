@@ -2,30 +2,31 @@
 
 namespace App\Service\Dentalink\Factory;
 
-use App\Service\Dentalink\Client;
+use App\Service\Dentalink\ClientInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 
 class Factory implements FactoryInterface
 {
     private string $token;
 
-    private string $url;
+    private \GuzzleHttp\ClientInterface $httpClient;
 
-    private Client $client;
+    private ClientInterface $client;
 
     public function __construct(
-        ContainerBagInterface $params,
-        Client $client
+        \GuzzleHttp\ClientInterface $httpClient,
+        ClientInterface $client,
+        ContainerBagInterface $params
     ) {
-        $this->token = $params->get('dentalink.api_token');
-        $this->url = $params->get('dentalink.api_url');
+        $this->httpClient = $httpClient;
         $this->client = $client;
+        $this->token = $params->get('dentalink.api_token');
     }
 
     public function create()
     {
         $this->client->setToken($this->token);
-        $this->client->setHttpClient(new \GuzzleHttp\Client(['base_uri' => $this->url]));
+        $this->client->setHttpClient($this->httpClient);
 
         return $this->client;
     }

@@ -20,19 +20,33 @@ class Client implements ClientInterface
 
     public function getAppointments($since)
     {
-        $query_string = '?q={"fecha_actualizacion":{"gte":"' . $since . '"}}';
+        $url = 'citas' . '?q={"fecha_actualizacion":{"gte":"' . $since . '"}}';
 
-        return $this->sendRequest('citas' . $query_string);
+        do {
+            $result = $this->sendRequest($url);
+
+            if (isset($result['data']) && count($result['data'])) {
+                foreach ($result['data'] as $appointment) {
+                    yield $appointment;
+                }
+            }
+
+            if (isset($result['links']['next'])) {
+                $url = $result['links']['next'];
+            }
+        } while (isset($result['links']['next']));
+
+        return $this->sendRequest($url);
     }
 
     public function getAppointment($id)
     {
-        return $this->sendRequest('citas/' . $id);
+        return $this->sendRequest('citas/' . $id)['data'] ?? null;
     }
 
     public function getPatient($id)
     {
-        return $this->sendRequest('pacientes/' . $id);
+        return $this->sendRequest('pacientes/' . $id)['data'] ?? null;
     }
 
     private function sendRequest($url)
@@ -49,9 +63,7 @@ class Client implements ClientInterface
             return null;
         }
 
-        $result = $response->getBody();
-
-        $this->logger->debug('Dentalink response: ' . print_r($result, true));
+        $result = json_decode($response->getBody()->getContents(), true);
 
         return $result;
     }

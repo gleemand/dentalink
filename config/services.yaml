@@ -3,6 +3,9 @@
 
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+imports:
+    - { resource: resources/ }
+
 parameters:
     app.since_file: 'var/sinceDateTime'
 
@@ -12,6 +15,7 @@ parameters:
     crm.custom_fields:
         date: '%env(CRM_DATE_FIELD)%'
         time: '%env(CRM_TIME_FIELD)%'
+        iden: '%env(CRM_IDEN_FIELD)%'
     crm.site: '%env(CRM_SITE_CODE)%'
 
     dentalink.api_url: 'https://api.dentalink.healthatom.com/api/v1/'
@@ -40,5 +44,15 @@ services:
         arguments:
             - "[%%datetime%%] %%channel%%.%%level_name%%: %%message%% %%context%% %%extra%%\n"
             - "Y-m-d H:i:s"
-            - false
             - true
+            - true
+
+    App\Service\Dentalink\Factory\Factory:
+        class: 'App\Service\Dentalink\Factory\Factory'
+        arguments:
+            $httpClient: '@http_client_dentalink.guzzle'
+
+    App\Service\Simla\ApiWrapper:
+        class: 'App\Service\Simla\ApiWrapper'
+        arguments:
+            $httpClient: '@http_client_simla.guzzle'

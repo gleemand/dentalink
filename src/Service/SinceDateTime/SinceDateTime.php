@@ -14,6 +14,8 @@ class SinceDateTime implements SinceDateTimeInterface
 
     private LoggerInterface $logger;
 
+    private string $since;
+
     public function __construct(
         Filesystem $filesystem,
         ContainerBagInterface $params,
@@ -24,10 +26,30 @@ class SinceDateTime implements SinceDateTimeInterface
         $this->logger = $logger;
     }
 
+    private function now()
+    {
+        $now = new \DateTime();
+
+        return $now
+            ->setTimezone(new \DateTimeZone('America/Bogota'))
+            ->format('Y-m-d H:i:s');
+    }
+
+    public function save()
+    {
+        if (!$this->filesystem->exists($this->file)) {
+            $this->filesystem->touch($this->file);
+        }
+
+        $this->logger->debug('Save SinceDateTime: ' . $this->since);
+
+        $this->filesystem->dumpFile($this->file, $this->since);
+    }
+
     public function get()
     {
         $since = (new \DateTime())
-            ->sub(new \DateInterval('P1W'))
+            ->sub(new \DateInterval('P1M'))
             ->format('Y-m-d H:i:s');
 
         if ($this->filesystem->exists($this->file)) {
@@ -41,15 +63,8 @@ class SinceDateTime implements SinceDateTimeInterface
 
     public function set()
     {
-        if (!$this->filesystem->exists($this->file)) {
-            $this->filesystem->touch($this->file);
-        }
+        $this->since = $this->now();
 
-        $since = (new \DateTime())
-            ->format('Y-m-d H:i:s');
-
-        $this->logger->debug('Set SinceDateTime: ' . $since);
-
-        $this->filesystem->dumpFile($this->file, $since);
+        $this->logger->debug('Set SinceDateTime: ' . $this->since);
     }
 }

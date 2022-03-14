@@ -1,0 +1,24 @@
+services:
+    handler_stack_simla.guzzle:
+        class: 'GuzzleHttp\HandlerStack'
+        factory: ['@App\Guzzle\HandlerStackBuilder\HandlerStackBuilder', 'build']
+        arguments:
+            - !tagged_iterator 'guzzle.middleware.simla'
+
+    handler_stack_dentalink.guzzle:
+        class: 'GuzzleHttp\HandlerStack'
+        factory: [ '@App\Guzzle\HandlerStackBuilder\HandlerStackBuilder', 'build' ]
+        arguments:
+            - !tagged_iterator 'guzzle.middleware.dentalink'
+
+    http_client_simla.guzzle:
+        class: 'GuzzleHttp\Client'
+        arguments:
+            - handler: '@handler_stack_simla.guzzle'
+
+    http_client_dentalink.guzzle:
+        class: 'GuzzleHttp\Client'
+        arguments:
+            $config:
+                base_uri: '%dentalink.api_url%'
+                handler: '@handler_stack_dentalink.guzzle'

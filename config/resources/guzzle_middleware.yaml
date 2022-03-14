@@ -1,0 +1,12 @@
+services:
+    rate_limiter_simla.guzzle.middleware:
+        class: 'App\Guzzle\Middleware\RateLimiterMiddleware'
+        arguments:
+            $apiLimiter: '@limiter.crm_api'
+        tags: [ 'guzzle.middleware.simla' ]
+
+    rate_limiter_dentalink.guzzle.middleware:
+        class: 'App\Guzzle\Middleware\RateLimiterMiddleware'
+        arguments:
+            $apiLimiter: '@limiter.dentalink_api'
+        tags: [ 'guzzle.middleware.dentalink' ]

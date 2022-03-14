@@ -3,6 +3,7 @@
 namespace App\Service\Sync;
 
 use App\Service\Dentalink\ClientInterface;
+use App\Service\Dentalink\Factory\Factory;
 use App\Service\Dentalink\Factory\FactoryInterface;
 use App\Service\Simla\ApiWrapperInterface;
 use App\Service\SinceDateTime\SinceDateTimeInterface;
@@ -37,23 +38,24 @@ class Sync implements SyncInterface
 
     public function run()
     {
-        $this->logger->debug('----------Sync START----------');
+        $this->logger->info('----------Sync START----------');
 
         $since = $this->sinceDateTime->get();
+        $this->sinceDateTime->set();
         $appointments = $this->dentalink->getAppointments($since);
 
         if (is_iterable($appointments)) {
             foreach ($appointments as $appointment) {
+                $appointment['patient'] = $this->dentalink->getPatient($appointment['id_paciente']);
+                $customer = $this->simla->customerGet($appointment['patient']['id']);
+                $order = $this->simla->orderGet($appointment['id']);
+
                 $this->logger->debug('Appointment: ' . print_r($appointment, true));
 
-                $customer = $this->simla->customerGet($appointment['id_paciente']);
-                $order = $this->simla->orderGet($appointment['id']);
-                $patient = $this->dentalink->getPatient($appointment['id_paciente']);
-
                 if (!$customer) {
-                    $this->simla->customerCreate($this->transformer->customerTransform($patient));
+                    $this->simla->customerCreate($this->transformer->customerTransform($appointment['patient']));
                 } else {
-                    $this->simla->customerEdit($this->transformer->customerTransform($patient));
+                    $this->simla->customerEdit($this->transformer->customerTransform($appointment['patient']));
                 }
 
                 if (!$order) {
@@ -63,9 +65,9 @@ class Sync implements SyncInterface
                 }
             }
 
-            $this->sinceDateTime->set();
+            $this->sinceDateTime->save();
         }
 
-        $this->logger->debug('-----------Sync END-----------');
+        $this->logger->info('-----------Sync END-----------');
     }
 }

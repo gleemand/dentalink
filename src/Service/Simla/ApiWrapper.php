@@ -2,6 +2,7 @@
 
 namespace App\Service\Simla;
 
+use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use RetailCrm\Api\Client;
 use RetailCrm\Api\Enum\ByIdentifier;
@@ -23,6 +24,7 @@ class ApiWrapper implements ApiWrapperInterface
     private LoggerInterface $logger;
 
     public function __construct(
+        ClientInterface $httpClient,
         ContainerBagInterface $params,
         LoggerInterface $logger
     ) {
@@ -33,6 +35,7 @@ class ApiWrapper implements ApiWrapperInterface
         $apiKey = $params->get('crm.api_key');
 
         $factory = new ClientFactory();
+        $factory->setHttpClient($httpClient);
         $this->client = $factory->createClient($apiUrl, $apiKey);
     }
 
@@ -44,26 +47,36 @@ class ApiWrapper implements ApiWrapperInterface
                 new BySiteRequest(ByIdentifier::EXTERNAL_ID, $this->site)
             );
         } catch (ApiExceptionInterface $exception) {
+            if ($exception->getStatusCode() == 404) {
+                $this->logger->debug(sprintf(
+                    'Order with externalId#%d NOT found',
+                    $externalId,
+                ));
+
+                return null;
+            }
+
             $this->logger->error(sprintf(
                 'Error from RetailCRM API (status code: %d): %s',
                 $exception->getStatusCode(),
                 $exception->getMessage()
             ));
 
-            if (count($exception->getErrorResponse()->errors) > 0) {
-                $this->logger->error('Errors: ' . implode(', ', $exception->getErrorResponse()->errors));
-            }
-
             return null;
         }
 
-        $this->logger->debug('Order get: ' . print_r($response->order, true));
+        $this->logger->debug(sprintf(
+            'Order with externalId#%d exists',
+            $externalId,
+        ));
 
         return $response->order;
     }
 
     public function orderCreate($order)
     {
+        $this->logger->debug('Order to create: ' . print_r($order, true));
+
         $request        = new OrdersCreateRequest();
         $request->order = $order;
         $request->site  = $order->site;
@@ -77,10 +90,6 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
-            if (count($exception->getErrorResponse()->errors) > 0) {
-                $this->logger->error('Errors: ' . implode(', ', $exception->getErrorResponse()->errors));
-            }
-
             return null;
         }
 
@@ -89,6 +98,8 @@ class ApiWrapper implements ApiWrapperInterface
 
     public function orderEdit($order)
     {
+        $this->logger->debug('Order to edit: ' . print_r($order, true));
+
         $request        = new OrdersEditRequest();
         $request->by    = ByIdentifier::EXTERNAL_ID;
         $request->order = $order;
@@ -103,10 +114,6 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
-            if (count($exception->getErrorResponse()->errors) > 0) {
-                $this->logger->error('Errors: ' . implode(', ', $exception->getErrorResponse()->errors));
-            }
-
             return null;
         }
 
@@ -118,29 +125,39 @@ class ApiWrapper implements ApiWrapperInterface
         try {
             $response = $this->client->customers->get(
                 $externalId,
-                new BySiteRequest(ByIdentifier::ID, $this->site)
+                new BySiteRequest(ByIdentifier::EXTERNAL_ID, $this->site)
             );
         } catch (ApiExceptionInterface $exception) {
+            if ($exception->getStatusCode() == 404) {
+                $this->logger->debug(sprintf(
+                    'Customer with externalId#%d NOT found',
+                    $externalId,
+                ));
+
+                return null;
+            }
+
             $this->logger->error(sprintf(
                 'Error from RetailCRM API (status code: %d): %s',
                 $exception->getStatusCode(),
                 $exception->getMessage()
             ));
 
-            if (count($exception->getErrorResponse()->errors) > 0) {
-                $this->logger->error('Errors: ' . implode(', ', $exception->getErrorResponse()->errors));
-            }
-
             return null;
         }
 
-        $this->logger->debug('Customer get: ' . print_r($response->customer, true));
+        $this->logger->debug(sprintf(
+            'Customer with externalId#%d exists',
+            $externalId,
+        ));
 
         return $response->customer;
     }
 
     public function customerCreate($customer)
     {
+        $this->logger->debug('Customer to create: ' . print_r($customer, true));
+
         $request           = new CustomersCreateRequest();
         $request->customer = $customer;
         $request->site     = $customer->site;
@@ -154,10 +171,6 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
-            if (count($exception->getErrorResponse()->errors) > 0) {
-                $this->logger->error('Errors: ' . implode(', ', $exception->getErrorResponse()->errors));
-            }
-
             return null;
         }
 
@@ -166,8 +179,10 @@ class ApiWrapper implements ApiWrapperInterface
 
     public function customerEdit($customer)
     {
+        $this->logger->debug('Customer to edit: ' . print_r($customer, true));
+
         $request           = new CustomersEditRequest();
-        $request->by       = ByIdentifier::ID;
+        $request->by       = ByIdentifier::EXTERNAL_ID;
         $request->customer = $customer;
         $request->site     = $customer->site;
 
@@ -179,10 +194,6 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getStatusCode(),
                 $exception->getMessage()
             ));
-
-            if (count($exception->getErrorResponse()->errors) > 0) {
-                $this->logger->error('Errors: ' . implode(', ', $exception->getErrorResponse()->errors));
-            }
 
             return null;
         }
