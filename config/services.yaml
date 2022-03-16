@@ -9,14 +9,14 @@ imports:
 parameters:
     app.since_file: 'var/sinceDateTime'
 
-    crm.api_url: '%env(CRM_API_URL)%'
-    crm.api_key: '%env(CRM_API_KEY)%'
+    crm.api_url: '%env(string:CRM_API_URL)%'
+    crm.api_key: '%env(string:CRM_API_KEY)%'
 
-    crm.custom_fields: '%env(CRM_CUSTOM_FIELDS)%'
-    crm.site: '%env(CRM_SITE_CODE)%'
+    crm.custom_fields: '%env(string:CRM_CUSTOM_FIELDS)%'
+    crm.site: '%env(string:CRM_SITE_CODE)%'
 
     dentalink.api_url: 'https://api.dentalink.healthatom.com/api/v1/'
-    dentalink.api_token: '%env(DENTALINK_API_TOKEN)%'
+    dentalink.api_token: '%env(string:DENTALINK_API_TOKEN)%'
 
 services:
     # default configuration for services in *this* file

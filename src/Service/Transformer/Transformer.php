@@ -2,7 +2,6 @@
 
 namespace App\Service\Transformer;
 
-use RetailCrm\Api\Enum\Customers\CustomerType;
 use RetailCrm\Api\Model\Entity\Customers\Customer;
 use RetailCrm\Api\Model\Entity\Customers\CustomerAddress;
 use RetailCrm\Api\Model\Entity\Customers\CustomerPhone;
