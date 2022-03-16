@@ -12,10 +12,7 @@ parameters:
     crm.api_url: '%env(CRM_API_URL)%'
     crm.api_key: '%env(CRM_API_KEY)%'
 
-    crm.custom_fields:
-        date: '%env(CRM_DATE_FIELD)%'
-        time: '%env(CRM_TIME_FIELD)%'
-        iden: '%env(CRM_IDEN_FIELD)%'
+    crm.custom_fields: '%env(CRM_CUSTOM_FIELDS)%'
     crm.site: '%env(CRM_SITE_CODE)%'
 
     dentalink.api_url: 'https://api.dentalink.healthatom.com/api/v1/'

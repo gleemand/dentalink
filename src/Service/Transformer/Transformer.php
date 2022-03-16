@@ -19,7 +19,7 @@ class Transformer implements TransformerInterface
     public function __construct(
         ContainerBagInterface $params
     ) {
-        $this->customFields = $params->get('crm.custom_fields');
+        $this->customFields = json_decode($params->get('crm.custom_fields'), true);
         $this->site = $params->get('crm.site');
     }
 
@@ -43,7 +43,7 @@ class Transformer implements TransformerInterface
             !empty($patient['telefono']) ? new CustomerPhone($patient['telefono']) : null,
         ]);
         $customer->customFields = array_filter([
-            $this->customFields['iden'] => $patient['rut'] ?? null,
+            $this->customFields['identification'] => $patient['rut'] ?? null,
         ]);
 
         if (!empty($patient['ciudad']) || !empty($patient['comuna']) || !empty($patient['direccion'])) {
@@ -71,14 +71,15 @@ class Transformer implements TransformerInterface
             $appointment['id_paciente'],
             $this->site
         );
-        $order->createdAt       = !empty($appointment['fecha_actualizacion'])
-            ? new \DateTime($appointment['fecha_actualizacion'])
+        $order->createdAt       = !empty($appointment['fecha'])
+            ? new \DateTime($appointment['fecha'] . ' ' . $appointment['hora_inicio'])
             : null;
         $order->customFields    = array_filter([
             $this->customFields['date'] => $appointment['fecha'] ?? null,
             $this->customFields['time'] => ($appointment['hora_inicio'] ?? null)
                 . ' - ' . ($appointment['hora_fin'] ?? null)
                 . ' (' . ($appointment['duracion'] ?? null) . ')',
+            $this->customFields['tratamiento'] => $appointment['nombre_tratamiento'] ?? null,
         ]);
 
         return $order;

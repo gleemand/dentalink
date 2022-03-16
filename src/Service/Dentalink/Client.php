@@ -63,9 +63,7 @@ class Client implements ClientInterface
             return null;
         }
 
-        $result = json_decode($response->getBody()->getContents(), true);
-
-        return $result;
+        return json_decode($response->getBody()->getContents(), true);
     }
 
     public function setToken(string $token): void
