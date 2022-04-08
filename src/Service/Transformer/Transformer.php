@@ -15,10 +15,13 @@ class Transformer implements TransformerInterface
 
     private string $site;
 
+    private string $cancelledStatus;
+
     public function __construct(
         ContainerBagInterface $params
     ) {
         $this->customFields = json_decode($params->get('crm.custom_fields'), true);
+        $this->cancelledStatus = $params->get('crm.cancelled_status_code');
         $this->site = $params->get('crm.site');
     }
 
@@ -80,6 +83,10 @@ class Transformer implements TransformerInterface
                 . ' (' . ($appointment['duracion'] ?? null) . ')',
             $this->customFields['tratamiento'] => $appointment['nombre_tratamiento'] ?? null,
         ]);
+
+        if (isset($appointment['estado_anulacion']) && $appointment['estado_anulacion']) {
+            $order->status = $this->cancelledStatus;
+        }
 
         return $order;
     }
