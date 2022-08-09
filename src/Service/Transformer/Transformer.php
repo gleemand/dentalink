@@ -32,7 +32,7 @@ class Transformer implements TransformerInterface
         $customer->externalId   = $patient['id'];
         $customer->firstName    = $patient['nombre'] ?? null;
         $customer->lastName     = $patient['apellidos'] ?? null;
-        $customer->email        = $patient['email'] ?? null;
+        $customer->email        = strtolower($patient['email'] ?? '');
         $customer->site         = $this->site;
         $customer->createdAt    = !empty($patient['fecha_afiliacion'])
             ? new \DateTime($patient['fecha_afiliacion'])
@@ -67,7 +67,7 @@ class Transformer implements TransformerInterface
         $order->lastName        = $appointment['patient']['apellidos'] ?? null;
         $order->phone           = $appointment['patient']['celular'] ?? null;
         $order->additionalPhone = $appointment['patient']['telefono'] ?? null;
-        $order->email           = $appointment['patient']['email'] ?? null;
+        $order->email           = strtolower($appointment['patient']['email'] ?? '');
         $order->site            = $this->site;
         $order->customer        = SerializedRelationCustomer::withExternalId(
             $appointment['id_paciente'],

@@ -46,20 +46,15 @@ class ApiWrapper implements ApiWrapperInterface
                 $externalId,
                 new BySiteRequest(ByIdentifier::EXTERNAL_ID, $this->site)
             );
-        } catch (ApiExceptionInterface $exception) {
-            if ($exception->getStatusCode() == 404) {
-                $this->logger->debug(sprintf(
-                    'Order with externalId#%d NOT found',
-                    $externalId,
-                ));
-
-                return null;
-            }
+        } catch (\Exception $exception) {
+            $this->logger->error(sprintf(
+                'Error from RetailCRM API: %s',
+                $exception->getMessage()
+            ));
 
             $this->logger->error(sprintf(
-                'Error from RetailCRM API (status code: %d): %s',
-                $exception->getStatusCode(),
-                $exception->getMessage()
+                'Order: externalId#%d',
+                $externalId
             ));
 
             return null;
@@ -83,11 +78,15 @@ class ApiWrapper implements ApiWrapperInterface
 
         try {
             $this->client->orders->create($request);
-        } catch (ApiExceptionInterface $exception) {
+        } catch (\Exception $exception) {
             $this->logger->error(sprintf(
-                'Error from RetailCRM API (status code: %d): %s',
-                $exception->getStatusCode(),
+                'Error from RetailCRM API: %s',
                 $exception->getMessage()
+            ));
+
+            $this->logger->error(sprintf(
+                'Order: %s',
+                json_encode($order)
             ));
 
             return null;
@@ -107,11 +106,15 @@ class ApiWrapper implements ApiWrapperInterface
 
         try {
             $this->client->orders->edit($order->externalId, $request);
-        } catch (ApiExceptionInterface $exception) {
+        } catch (\Exception $exception) {
             $this->logger->error(sprintf(
-                'Error from RetailCRM API (status code: %d): %s',
-                $exception->getStatusCode(),
+                'Error from RetailCRM API: %s',
                 $exception->getMessage()
+            ));
+
+            $this->logger->error(sprintf(
+                'Order: %s',
+                json_encode($order)
             ));
 
             return null;
@@ -127,20 +130,15 @@ class ApiWrapper implements ApiWrapperInterface
                 $externalId,
                 new BySiteRequest(ByIdentifier::EXTERNAL_ID, $this->site)
             );
-        } catch (ApiExceptionInterface $exception) {
-            if ($exception->getStatusCode() == 404) {
-                $this->logger->debug(sprintf(
-                    'Customer with externalId#%d NOT found',
-                    $externalId,
-                ));
-
-                return null;
-            }
+        } catch (\Exception $exception) {
+            $this->logger->error(sprintf(
+                'Error from RetailCRM API: %s',
+                $exception->getMessage()
+            ));
 
             $this->logger->error(sprintf(
-                'Error from RetailCRM API (status code: %d): %s',
-                $exception->getStatusCode(),
-                $exception->getMessage()
+                'Customer: externalId#%d',
+                $externalId
             ));
 
             return null;
@@ -164,11 +162,15 @@ class ApiWrapper implements ApiWrapperInterface
 
         try {
             $this->client->customers->create($request);
-        } catch (ApiExceptionInterface $exception) {
+        } catch (\Exception $exception) {
             $this->logger->error(sprintf(
-                'Error from RetailCRM API (status code: %d): %s',
-                $exception->getStatusCode(),
+                'Error from RetailCRM API: %s',
                 $exception->getMessage()
+            ));
+
+            $this->logger->error(sprintf(
+                'Customer: %s',
+                json_encode($customer)
             ));
 
             return null;
@@ -188,11 +190,15 @@ class ApiWrapper implements ApiWrapperInterface
 
         try {
             $this->client->customers->edit($customer->externalId, $request);
-        } catch (ApiExceptionInterface $exception) {
+        } catch (\Exception $exception) {
             $this->logger->error(sprintf(
-                'Error from RetailCRM API (status code: %d): %s',
-                $exception->getStatusCode(),
+                'Error from RetailCRM API: %s',
                 $exception->getMessage()
+            ));
+
+            $this->logger->error(sprintf(
+                'Customer: %s',
+                json_encode($customer)
             ));
 
             return null;

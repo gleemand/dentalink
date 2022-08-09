@@ -22,7 +22,7 @@ class SinceDateTime implements SinceDateTimeInterface
         LoggerInterface $logger
     ) {
         $this->filesystem = $filesystem;
-        $this->file = $params->get('app.since_file');
+        $this->file = __DIR__ . '/../../../' . $params->get('app.since_file');
         $this->logger = $logger;
     }
 

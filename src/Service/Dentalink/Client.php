@@ -35,8 +35,6 @@ class Client implements ClientInterface
                 $url = $result['links']['next'];
             }
         } while (isset($result['links']['next']));
-
-        return $this->sendRequest($url);
     }
 
     public function getAppointment($id)
