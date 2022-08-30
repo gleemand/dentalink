@@ -15,19 +15,31 @@ class Transformer implements TransformerInterface
 
     private string $site;
 
-    private string $cancelledStatus;
+    private array $statusMapping;
+
+    private string $dentalinkIdField;
 
     public function __construct(
         ContainerBagInterface $params
     ) {
-        $this->customFields = json_decode($params->get('crm.custom_fields'), true);
-        $this->cancelledStatus = $params->get('crm.cancelled_status_code');
+        $this->customFields = json_decode($params->get('app.custom_fields'), true);
+        $this->statusMapping = $params->get('app.status_mapping');
         $this->site = $params->get('crm.site');
+        $this->dentalinkIdField = $params->get('crm.dentalink_id_field');
     }
 
-    public function customerTransform(array $patient)
+    public function crmCustomerTransform(array $patient): Customer
     {
         $customer = new Customer();
+
+        switch ($patient['sexo'] ?? '') {
+            case 'M':
+                $customer->sex = 'male';
+                break;
+            case 'F':
+                $customer->sex = 'female';
+                break;
+        }
 
         $customer->externalId   = $patient['id'];
         $customer->firstName    = $patient['nombre'] ?? null;
@@ -58,7 +70,7 @@ class Transformer implements TransformerInterface
         return $customer;
     }
 
-    public function orderTransform($appointment)
+    public function crmOrderTransform(array $appointment): Order
     {
         $order = new Order();
 
@@ -69,25 +81,71 @@ class Transformer implements TransformerInterface
         $order->additionalPhone = $appointment['patient']['telefono'] ?? null;
         $order->email           = strtolower($appointment['patient']['email'] ?? '');
         $order->site            = $this->site;
+        $order->status          = $this->statusMapping[$appointment['id_estado']] ?? null;
         $order->customer        = SerializedRelationCustomer::withExternalId(
             $appointment['id_paciente'],
             $this->site
         );
-        $order->createdAt       = !empty($appointment['fecha'])
-            ? new \DateTime($appointment['fecha'] . ' ' . $appointment['hora_inicio'])
-            : null;
-        $order->customFields    = array_filter([
-            $this->customFields['date'] => $appointment['fecha'] ?? null,
-            $this->customFields['time'] => ($appointment['hora_inicio'] ?? null)
-                . ' - ' . ($appointment['hora_fin'] ?? null)
-                . ' (' . ($appointment['duracion'] ?? null) . ')',
-            $this->customFields['tratamiento'] => $appointment['nombre_tratamiento'] ?? null,
-        ]);
+        $order->managerComment  = $appointment['comentarios'] ?? null;
+        $order->createdAt       = $appointment['fecha_actualizacion'] ?? null;
 
-        if (isset($appointment['estado_anulacion']) && $appointment['estado_anulacion']) {
-            $order->status = $this->cancelledStatus;
+        $customFields = [];
+
+        foreach ($this->customFields as $dentalinkCode => $crmCode) {
+            $customFields[$crmCode] = $appointment[$dentalinkCode] ?? null;
         }
 
+        $order->customFields = array_filter($customFields);
+
         return $order;
+    }
+
+    public function dentalinkCustomerTransform(Customer $customer): array
+    {
+        $sex = null;
+
+        switch ($patient['sexo'] ?? '') {
+            case 'male':
+                $sex = 1;
+                break;
+            case 'female':
+                $sex = 2;
+                break;
+        }
+
+        return array_filter([
+            'id' => $customer->externalId,
+            'nombre' => $customer->firstName,
+            'apellidos' => $customer->lastName,
+            'sexo' => $customer->sex ? mb_strtoupper(mb_substr($customer->sex, 0, 1)) : null,
+            'id_genero' => $sex,
+            'direccion' => $customer->address->text,
+            'ciudad' => $customer->address->city,
+            'email' => $customer->email,
+            'rut' => $customer->customFields[$this->customFields['rut']] ?? null,
+            'telefono' => count($customer->phones)
+                ? (int) filter_var(
+                    reset($customer->phones),
+                    FILTER_SANITIZE_NUMBER_INT
+                )
+                : null,
+            'fecha_nacimiento' => $customer->birthday->format('Y-m-d'),
+        ]);
+    }
+
+    public function dentalinkOrderTransform(Order $order): array
+    {
+        $cita = [
+            'id' => $order->externalId,
+            'id_estado' => array_flip($this->statusMapping)[$order->status] ?? null,
+            'id_paciente' => $order->customer->externalId,
+            'comentario' => $order->managerComment,
+        ];
+
+        foreach ($this->customFields as $dentalinkCode => $crmCode) {
+            $cita[$dentalinkCode] = $order->customFields[$crmCode] ?? null;
+        }
+
+        return array_filter($cita);
     }
 }

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dentalink info</title>
+</head>
+<body>
+<h1>Dentalink info</h1>
+
+<table>
+    <tr>
+        {% for key, reference in references %}
+            <th>{{ key }}</th>
+        {% endfor %}
+    </tr>
+    <tr align="top">
+        {% for key, reference in references %}
+            <td>
+                <table border="3">
+                    <tr>
+                        <th>id</th>
+                        <th>nombre</th>
+                    </tr>
+                    {% for element in reference %}
+                        <tr>
+                            {% for key, value in element %}
+                                {% if key is same as 'id' or key is same as 'nombre' %}
+                                    <td>{{ value }}</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        {% endfor %}
+    </tr>
+</table>
+</body>
+<style>
+    table td, table td * {
+        vertical-align: top;
+        max-width: 400px;
+    }
+</style>
+</html>

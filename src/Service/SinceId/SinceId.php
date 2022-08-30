@@ -1,13 +1,16 @@
 <?php
 
-namespace App\Service\SinceDateTime;
+namespace App\Service\SinceId;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
-class SinceDateTime implements SinceDateTimeInterface
+class SinceId implements SinceIdInterface
 {
+    public const CUSTOMERS = 'customers';
+    public const ORDERS = 'orders';
+
     private Filesystem $filesystem;
 
     private string $file;
@@ -16,23 +19,21 @@ class SinceDateTime implements SinceDateTimeInterface
 
     private string $since;
 
+    private ContainerBagInterface $params;
+
     public function __construct(
         Filesystem $filesystem,
         ContainerBagInterface $params,
         LoggerInterface $logger
     ) {
         $this->filesystem = $filesystem;
-        $this->file = __DIR__ . '/../../../' . $params->get('app.since_datetime_file');
+        $this->params = $params;
         $this->logger = $logger;
     }
 
-    private function now()
+    public function init(string $entityType): void
     {
-        $now = new \DateTime();
-
-        return $now
-            ->setTimezone(new \DateTimeZone('America/Bogota'))
-            ->format('Y-m-d H:i:s');
+        $this->file = __DIR__ . '/../../../' . $this->params->get('app.since_id_file_' . $entityType);
     }
 
     public function save(): void
@@ -41,30 +42,28 @@ class SinceDateTime implements SinceDateTimeInterface
             $this->filesystem->touch($this->file);
         }
 
-        $this->logger->debug('Save SinceDateTime: ' . $this->since);
+        $this->logger->debug('Save SinceId: ' . $this->since);
 
         $this->filesystem->dumpFile($this->file, $this->since);
     }
 
-    public function get(): string
+    public function get(): ?int
     {
-        $since = (new \DateTime())
-            ->sub(new \DateInterval('P1M'))
-            ->format('Y-m-d H:i:s');
+        $since = null;
 
         if ($this->filesystem->exists($this->file)) {
             $since = file_get_contents($this->file);
         }
 
-        $this->logger->debug('Get SinceDateTime: ' . $since);
+        $this->logger->debug('Get SinceId: ' . $since);
 
         return $since;
     }
 
-    public function set(): void
+    public function set(int $sinceId): void
     {
-        $this->since = $this->now();
+        $this->since = $sinceId;
 
-        $this->logger->debug('Set SinceDateTime: ' . $this->since);
+        $this->logger->debug('Set SinceId: ' . $this->since);
     }
 }

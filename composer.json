@@ -18,13 +18,15 @@
         "symfony/monolog-bundle": "^3.7",
         "symfony/rate-limiter": "5.4.*",
         "symfony/runtime": "5.4.*",
+        "symfony/twig-bundle": "5.4.*",
         "symfony/yaml": "5.4.*"
     },
     "config": {
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "civicrm/composer-compile-plugin": true
         },
         "optimize-autoloader": true,
         "preferred-install": {
@@ -70,6 +72,6 @@
         "compile-whitelist": ["retailcrm/api-client-php"]
     },
     "require-dev": {
-        "symfony/maker-bundle": "^1.38"
+        "symfony/maker-bundle": "^1.43"
     }
 }

@@ -18,7 +18,7 @@ class Client implements ClientInterface
         $this->logger = $logger;
     }
 
-    public function getAppointments($since)
+    public function getAppointments(string $since): \Generator
     {
         $url = 'citas' . '?q={"fecha_actualizacion":{"gte":"' . $since . '"}}';
 
@@ -37,24 +37,75 @@ class Client implements ClientInterface
         } while (isset($result['links']['next']));
     }
 
-    public function getAppointment($id)
+    public function getAppointment(int $id): ?array
     {
         return $this->sendRequest('citas/' . $id)['data'] ?? null;
     }
 
-    public function getPatient($id)
+    public function getPatient(int $id): ?array
     {
         return $this->sendRequest('pacientes/' . $id)['data'] ?? null;
     }
 
-    private function sendRequest($url)
+    public function createPatient(array $patient): ?array
+    {
+        return $this->sendRequest('pacientes', 'POST', $patient)['data'] ?? null;
+    }
+
+    public function editPatient(array $patient): ?array
+    {
+        return $this->sendRequest('pacientes/' . $patient['id'], 'PUT', $patient)['data'] ?? null;
+    }
+
+    public function createCita(array $cita): ?array
+    {
+        return $this->sendRequest('citas', 'POST', $cita)['data'] ?? null;
+    }
+
+    public function editCita(array $cita): ?array
+    {
+        return $this->sendRequest('citas/' . $cita['id'], 'PUT', $cita)['data'] ?? null;
+    }
+
+    public function getStatuses(): ?array
+    {
+        return $this->sendRequest('citas/estados')['data'] ?? null;
+    }
+
+    public function getDentistas(): ?array
+    {
+        return $this->sendRequest('dentistas')['data'] ?? null;
+    }
+
+    public function getTratamientos(): ?array
+    {
+        return $this->sendRequest('tratamientos')['data'] ?? null;
+    }
+
+    public function getSucursales(): ?array
+    {
+        return $this->sendRequest('sucursales')['data'] ?? null;
+    }
+
+    public function getSillones(): ?array
+    {
+        return $this->sendRequest('sillones')['data'] ?? null;
+    }
+
+    public function getEspecialidades(): ?array
+    {
+        return $this->sendRequest('especialidades')['data'] ?? null;
+    }
+
+    private function sendRequest(string $url, ?string $method = 'GET', ?array $data = null)
     {
         try {
-            $response = $this->httpClient->request('GET', $url, [
+            $response = $this->httpClient->request($method, $url, array_filter([
                 'headers' => [
                     'Authorization' => 'Token ' . $this->token
-                ]
-            ]);
+                ],
+                'body' => $data,
+            ]));
         } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
 
