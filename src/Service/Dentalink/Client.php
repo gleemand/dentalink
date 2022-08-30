@@ -18,7 +18,7 @@ class Client implements ClientInterface
         $this->logger = $logger;
     }
 
-    public function getAppointments($since)
+    public function getAppointments(string $since): \Generator
     {
         $url = 'citas' . '?q={"fecha_actualizacion":{"gte":"' . $since . '"}}';
 
@@ -37,24 +37,39 @@ class Client implements ClientInterface
         } while (isset($result['links']['next']));
     }
 
-    public function getAppointment($id)
+    public function getAppointment(int $id): ?array
     {
         return $this->sendRequest('citas/' . $id)['data'] ?? null;
     }
 
-    public function getPatient($id)
+    public function getPatient(int $id): ?array
     {
         return $this->sendRequest('pacientes/' . $id)['data'] ?? null;
     }
 
-    private function sendRequest($url)
+    public function createPatient(array $patient): ?array
+    {
+        unset($patient['id']);
+
+        return $this->sendRequest('pacientes', 'POST', $patient)['data'] ?? null;
+    }
+
+    public function editPatient(array $patient): ?array
+    {
+        unset($patient['id']);
+
+        return $this->sendRequest('pacientes/' . $patient['id'], 'PUT', $patient)['data'] ?? null;
+    }
+
+    private function sendRequest(string $url, ?string $method = 'GET', ?array $data = null)
     {
         try {
-            $response = $this->httpClient->request('GET', $url, [
+            $response = $this->httpClient->request($method, $url, array_filter([
                 'headers' => [
                     'Authorization' => 'Token ' . $this->token
-                ]
-            ]);
+                ],
+                'body' => $data,
+            ]));
         } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
 

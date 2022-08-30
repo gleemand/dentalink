@@ -25,7 +25,7 @@ class Transformer implements TransformerInterface
         $this->site = $params->get('crm.site');
     }
 
-    public function customerTransform(array $patient)
+    public function crmCustomerTransform(array $patient): Customer
     {
         $customer = new Customer();
 
@@ -58,7 +58,7 @@ class Transformer implements TransformerInterface
         return $customer;
     }
 
-    public function orderTransform($appointment)
+    public function crmOrderTransform(array $appointment): Order
     {
         $order = new Order();
 
@@ -89,5 +89,35 @@ class Transformer implements TransformerInterface
         }
 
         return $order;
+    }
+
+    public function dentalinkCustomerTransform(Customer $customer): array
+    {
+        return array_filter([
+            'id' => $customer->customFields[$this->customFields['dentalink_id']] ?? null,
+            'nombre' => $customer->firstName,
+            'apellidos' => $customer->lastName,
+            'sexo' => $customer->sex ? mb_strtoupper(mb_substr($customer->sex, 0, 1)) : null,
+            'id_genero' => $customer->sex ? ('male' === $customer->sex ? 1 : 2) : null,
+            'direccion' => $customer->address->text,
+            'ciudad' => $customer->address->city,
+            'email' => $customer->email,
+            'rut' => $customer->customFields[$this->customFields['identification']] ?? null,
+            'telefono' => count($customer->phones)
+                ? (int) filter_var(
+                    reset($customer->phones),
+                    FILTER_SANITIZE_NUMBER_INT
+                )
+                : null,
+            'fecha_nacimiento' => $customer->birthday->format('Y-m-d'),
+        ]);
+    }
+
+    public function dentalinkOrderTransform(Order $order): array
+    {
+        // TODO: order transform
+        return array_filter([
+            'id' => $order->id
+        ]);
     }
 }

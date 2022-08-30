@@ -7,7 +7,8 @@ imports:
     - { resource: resources/ }
 
 parameters:
-    app.since_file: 'var/sinceDateTime'
+    app.since_datetime_file: 'var/sinceDateTime'
+    app.since_id_file: 'var/sinceId'
 
     crm.api_url: '%env(string:CRM_API_URL)%'
     crm.api_key: '%env(string:CRM_API_KEY)%'

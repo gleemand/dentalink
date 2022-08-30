@@ -52,16 +52,19 @@ class Sync implements SyncInterface
 
                 $this->logger->debug('Appointment: ' . print_r($appointment, true));
 
+                $transformedCustomer = $this->transformer->crmCustomerTransform($appointment['patient']);
+                $transformedOrder = $this->transformer->crmOrderTransform($appointment);
+
                 if (!$customer) {
-                    $this->simla->customerCreate($this->transformer->customerTransform($appointment['patient']));
+                    $this->simla->customerCreate($transformedCustomer);
                 } else {
-                    $this->simla->customerEdit($this->transformer->customerTransform($appointment['patient']));
+                    $this->simla->customerEdit($transformedCustomer);
                 }
 
                 if (!$order) {
-                    $this->simla->orderCreate($this->transformer->orderTransform($appointment));
+                    $this->simla->orderCreate($transformedOrder);
                 } else {
-                    $this->simla->orderEdit($this->transformer->orderTransform($appointment));
+                    $this->simla->orderEdit($transformedOrder);
                 }
             }
 

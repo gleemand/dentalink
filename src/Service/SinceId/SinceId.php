@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Service\SinceDateTime;
+namespace App\Service\SinceId;
 
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\Filesystem\Filesystem;
 
-class SinceDateTime implements SinceDateTimeInterface
+class SinceId implements SinceIdInterface
 {
     private Filesystem $filesystem;
 
@@ -22,17 +22,8 @@ class SinceDateTime implements SinceDateTimeInterface
         LoggerInterface $logger
     ) {
         $this->filesystem = $filesystem;
-        $this->file = __DIR__ . '/../../../' . $params->get('app.since_datetime_file');
+        $this->file = __DIR__ . '/../../../' . $params->get('app.since_id_file');
         $this->logger = $logger;
-    }
-
-    private function now()
-    {
-        $now = new \DateTime();
-
-        return $now
-            ->setTimezone(new \DateTimeZone('America/Bogota'))
-            ->format('Y-m-d H:i:s');
     }
 
     public function save(): void
@@ -41,30 +32,28 @@ class SinceDateTime implements SinceDateTimeInterface
             $this->filesystem->touch($this->file);
         }
 
-        $this->logger->debug('Save SinceDateTime: ' . $this->since);
+        $this->logger->debug('Save SinceId: ' . $this->since);
 
         $this->filesystem->dumpFile($this->file, $this->since);
     }
 
-    public function get(): string
+    public function get(): ?int
     {
-        $since = (new \DateTime())
-            ->sub(new \DateInterval('P1M'))
-            ->format('Y-m-d H:i:s');
+        $since = null;
 
         if ($this->filesystem->exists($this->file)) {
             $since = file_get_contents($this->file);
         }
 
-        $this->logger->debug('Get SinceDateTime: ' . $since);
+        $this->logger->debug('Get SinceId: ' . $since);
 
         return $since;
     }
 
-    public function set(): void
+    public function set(int $sinceId): void
     {
-        $this->since = $this->now();
+        $this->since = $sinceId;
 
-        $this->logger->debug('Set SinceDateTime: ' . $this->since);
+        $this->logger->debug('Set SinceId: ' . $this->since);
     }
 }
