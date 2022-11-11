@@ -3,9 +3,9 @@
 namespace App\Service\Sync;
 
 use App\Service\Dentalink\ClientInterface;
-use App\Service\Dentalink\Factory\Factory;
 use App\Service\Dentalink\Factory\FactoryInterface;
 use App\Service\Simla\ApiWrapperInterface;
+use App\Service\SinceDateTime\SinceDateTime;
 use App\Service\SinceDateTime\SinceDateTimeInterface;
 use App\Service\Transformer\TransformerInterface;
 use Psr\Log\LoggerInterface;
@@ -13,13 +13,9 @@ use Psr\Log\LoggerInterface;
 class Sync implements SyncInterface
 {
     private ClientInterface $dentalink;
-
     private ApiWrapperInterface $simla;
-
     private SinceDateTimeInterface $sinceDateTime;
-
     private TransformerInterface $transformer;
-
     private LoggerInterface $logger;
 
     public function __construct(
@@ -40,8 +36,10 @@ class Sync implements SyncInterface
     {
         $this->logger->info('----------Sync START----------');
 
+        $this->sinceDateTime->init(SinceDateTime::CITAS);
         $since = $this->sinceDateTime->get();
         $this->sinceDateTime->set();
+        $this->sinceDateTime->save();
         $appointments = $this->dentalink->getAppointments($since);
 
         if (is_iterable($appointments)) {
@@ -52,20 +50,21 @@ class Sync implements SyncInterface
 
                 $this->logger->debug('Appointment: ' . print_r($appointment, true));
 
+                $transformedCustomer = $this->transformer->crmCustomerTransform($appointment['patient']);
+                $transformedOrder = $this->transformer->crmOrderTransform($appointment);
+
                 if (!$customer) {
-                    $this->simla->customerCreate($this->transformer->customerTransform($appointment['patient']));
+                    $this->simla->customerCreate($transformedCustomer);
                 } else {
-                    $this->simla->customerEdit($this->transformer->customerTransform($appointment['patient']));
+                    $this->simla->customerEdit($transformedCustomer);
                 }
 
                 if (!$order) {
-                    $this->simla->orderCreate($this->transformer->orderTransform($appointment));
+                    $this->simla->orderCreate($transformedOrder);
                 } else {
-                    $this->simla->orderEdit($this->transformer->orderTransform($appointment));
+                    $this->simla->orderEdit($transformedOrder);
                 }
             }
-
-            $this->sinceDateTime->save();
         }
 
         $this->logger->info('-----------Sync END-----------');

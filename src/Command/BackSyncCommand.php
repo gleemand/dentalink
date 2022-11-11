@@ -2,31 +2,26 @@
 
 namespace App\Command;
 
-use App\Service\Sync\PaymentSyncInterface;
-use App\Service\Sync\SyncInterface;
+use App\Service\BackSync\BackSyncInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class SyncCommand extends Command
+class BackSyncCommand extends Command
 {
     use LockableTrait;
 
-    protected static $defaultName = 'sync';
+    protected static $defaultName = 'backsync';
 
-    protected static $defaultDescription = 'Start sync';
+    protected static $defaultDescription = 'Start back sync';
 
-    private SyncInterface $syncService;
-
-    private PaymentSyncInterface $paymentSync;
+    private BackSyncInterface $syncService;
 
     public function __construct(
-        SyncInterface $syncService,
-        PaymentSyncInterface $paymentSync
+        BackSyncInterface $syncService
     ) {
         $this->syncService = $syncService;
-        $this->paymentSync = $paymentSync;
 
         parent::__construct();
     }
@@ -40,7 +35,6 @@ class SyncCommand extends Command
         }
 
         $this->syncService->run();
-        $this->paymentSync->run();
 
         $this->release();
 

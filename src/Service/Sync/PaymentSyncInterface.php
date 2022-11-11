@@ -2,7 +2,7 @@
 
 namespace App\Service\Sync;
 
-interface SyncInterface
+interface PaymentSyncInterface
 {
     public function run();
 }
