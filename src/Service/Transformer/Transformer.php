@@ -5,6 +5,7 @@ namespace App\Service\Transformer;
 use RetailCrm\Api\Model\Entity\Customers\Customer;
 use RetailCrm\Api\Model\Entity\Customers\CustomerAddress;
 use RetailCrm\Api\Model\Entity\Customers\CustomerPhone;
+use RetailCrm\Api\Model\Entity\Delivery\SerializedEntityOrder;
 use RetailCrm\Api\Model\Entity\Orders\Order;
 use RetailCrm\Api\Model\Entity\Orders\SerializedPayment;
 use RetailCrm\Api\Model\Entity\Orders\SerializedRelationCustomer;
@@ -15,15 +16,15 @@ class Transformer implements TransformerInterface
     private array $customFields;
     private string $site;
     private array $statusMapping;
-    private string $dentalinkIdField;
+    private string $paymentType;
 
     public function __construct(
         ContainerBagInterface $params
     ) {
         $this->customFields = json_decode($params->get('app.custom_fields'), true);
-        $this->statusMapping = $params->get('app.status_mapping');
+        $this->statusMapping = json_decode($params->get('app.status_mapping'), true);
+        $this->paymentType = $params->get('crm.payment_type');
         $this->site = $params->get('crm.site');
-        $this->dentalinkIdField = $params->get('crm.dentalink_id_field');
     }
 
     public function crmCustomerTransform(array $patient): Customer
@@ -42,7 +43,7 @@ class Transformer implements TransformerInterface
         $customer->externalId   = $patient['id'];
         $customer->firstName    = $patient['nombre'] ?? null;
         $customer->lastName     = $patient['apellidos'] ?? null;
-        $customer->email        = strtolower($patient['email'] ?? '');
+        $customer->email        = strtolower($patient['email'] ?? 'nomail@nomail.com');
         $customer->site         = $this->site;
         $customer->createdAt    = !empty($patient['fecha_afiliacion'])
             ? new \DateTime($patient['fecha_afiliacion'])
@@ -54,9 +55,6 @@ class Transformer implements TransformerInterface
             !empty($patient['celular']) ? new CustomerPhone($patient['celular']) : null,
             !empty($patient['telefono']) ? new CustomerPhone($patient['telefono']) : null,
         ]);
-        $customer->customFields = array_filter([
-            $this->customFields['identification'] => $patient['rut'] ?? null,
-        ]);
 
         if (!empty($patient['ciudad']) || !empty($patient['comuna']) || !empty($patient['direccion'])) {
             $customer->address         = new CustomerAddress();
@@ -64,6 +62,12 @@ class Transformer implements TransformerInterface
             $customer->address->region = $patient['comuna'] ?? null;
             $customer->address->text   = $patient['direccion'] ?? null;
         }
+
+        foreach ($this->customFields as $dentalinkCode => $crmCode) {
+            $customFields[$crmCode] = $patient[$dentalinkCode] ?? null;
+        }
+
+        $customer->customFields = array_filter($customFields);
 
         return $customer;
     }
@@ -85,7 +89,7 @@ class Transformer implements TransformerInterface
             $this->site
         );
         $order->managerComment  = $appointment['comentarios'] ?? null;
-        $order->createdAt       = $appointment['fecha_actualizacion'] ?? null;
+        $order->createdAt       = new \DateTime($appointment['fecha_actualizacion'] ?? null);
 
         $customFields = [];
 
@@ -111,7 +115,7 @@ class Transformer implements TransformerInterface
                 break;
         }
 
-        return array_filter([
+        $patient = [
             'id' => $customer->externalId,
             'nombre' => $customer->firstName,
             'apellidos' => $customer->lastName,
@@ -120,7 +124,6 @@ class Transformer implements TransformerInterface
             'direccion' => $customer->address->text,
             'ciudad' => $customer->address->city,
             'email' => $customer->email,
-            'rut' => $customer->customFields[$this->customFields['rut']] ?? null,
             'telefono' => count($customer->phones)
                 ? (int) filter_var(
                     reset($customer->phones),
@@ -128,15 +131,23 @@ class Transformer implements TransformerInterface
                 )
                 : null,
             'fecha_nacimiento' => $customer->birthday->format('Y-m-d'),
-        ]);
+        ];
+
+        foreach ($this->customFields as $dentalinkCode => $crmCode) {
+            $patient[$dentalinkCode] = $order->customFields[$crmCode] ?? null;
+        }
+
+        return array_filter($patient);
     }
 
     public function crmPaymentTransform(array $pago, int $orderId): SerializedPayment
     {
         $payment = new SerializedPayment();
+        $payment->type = $this->paymentType;
         $payment->amount = $pago['monto_pago'] ?? null;
         $payment->paidAt = new \DateTime($pago['fecha_creacion'] ?? null);
         $payment->comment = ($pago['medio_pago'] ?? null) . ' ' . ($pago['numero_referencia'] ?? null);
+        $payment->order = new SerializedEntityOrder();
         $payment->order->id = $orderId;
 
         return $payment;

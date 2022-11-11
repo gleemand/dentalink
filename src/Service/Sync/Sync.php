@@ -39,6 +39,7 @@ class Sync implements SyncInterface
         $this->sinceDateTime->init(SinceDateTime::CITAS);
         $since = $this->sinceDateTime->get();
         $this->sinceDateTime->set();
+        $this->sinceDateTime->save();
         $appointments = $this->dentalink->getAppointments($since);
 
         if (is_iterable($appointments)) {

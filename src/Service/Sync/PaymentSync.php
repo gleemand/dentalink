@@ -44,32 +44,31 @@ class PaymentSync implements PaymentSyncInterface
         $this->sinceDateTime->init(SinceDateTime::PAYMENTS);
         $since = $this->sinceDateTime->get();
         $this->sinceDateTime->set();
+        $this->sinceDateTime->save();
         $payments = $this->dentalink->getPayments($since);
 
-        if (is_iterable($payments)) {
-            foreach ($payments as $payment) {
-                if (!$payment['monto_pago'] || $payment['id_paciente']) {
-                    continue;
-                }
-
-                $orders = $this->simla->getOrdersForCustomer($payment['id_paciente']);
-
-                if (!$orders || !count($orders)) {
-                    continue;
-                }
-
-                $order = $this->getLastOrder($orders);
-
-                if (!$order) {
-                    continue;
-                }
-
-                $this->logger->debug('Last order: ' . print_r($order, true));
-
-                $transformedPayment = $this->transformer->crmPaymentTransform($payment, $order->id);
-
-                $this->simla->paymentCreate($transformedPayment);
+        foreach ($payments as $payment) {
+            if (!$payment['monto_pago'] || !$payment['id_paciente']) {
+                continue;
             }
+
+            $orders = $this->simla->getOrdersForCustomer($payment['id_paciente']);
+
+            if (!$orders || !count($orders)) {
+                continue;
+            }
+
+            $order = $this->getLastOrder($orders);
+
+            if (!$order) {
+                continue;
+            }
+
+            $this->logger->debug('Last order: ' . print_r($order, true));
+
+            $transformedPayment = $this->transformer->crmPaymentTransform($payment, $order->id);
+
+            $this->simla->paymentCreate($transformedPayment);
         }
 
         $this->logger->info('-----------PaymentSync END-----------');

@@ -66,6 +66,13 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
+
             $this->logger->error(sprintf(
                 'Orders of customer with externalId#%d',
                 $externalId
@@ -73,12 +80,6 @@ class ApiWrapper implements ApiWrapperInterface
 
             return null;
         }
-
-        $this->logger->debug(sprintf(
-            'Orders of customer with externalId#%d: %s',
-            $externalId,
-            json_decode()
-        ));
 
         return $response->orders;
     }
@@ -95,6 +96,13 @@ class ApiWrapper implements ApiWrapperInterface
                 'Error from RetailCRM API: %s',
                 $exception->getMessage()
             ));
+
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
 
             $this->logger->error(sprintf(
                 'Order: externalId#%d',
@@ -128,6 +136,13 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
+
             $this->logger->error(sprintf(
                 'Order: %s',
                 json_encode($order)
@@ -156,6 +171,13 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
+
             $this->logger->error(sprintf(
                 'Order: %s',
                 json_encode($order)
@@ -179,6 +201,13 @@ class ApiWrapper implements ApiWrapperInterface
                 'Error from RetailCRM API: %s',
                 $exception->getMessage()
             ));
+
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
 
             $this->logger->error(sprintf(
                 'Customer: externalId#%d',
@@ -212,6 +241,13 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
+
             $this->logger->error(sprintf(
                 'Customer: %s',
                 json_encode($customer)
@@ -239,6 +275,13 @@ class ApiWrapper implements ApiWrapperInterface
                 'Error from RetailCRM API: %s',
                 $exception->getMessage()
             ));
+
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
 
             $this->logger->error(sprintf(
                 'Customer: %s',
@@ -275,6 +318,13 @@ class ApiWrapper implements ApiWrapperInterface
                     'Error from RetailCRM API: %s',
                     $exception->getMessage()
                 ));
+
+                if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                    $this->logger->error(sprintf(
+                        'Details: %s',
+                        implode(', ', $exception->getErrorResponse()->errors)
+                    ));
+                }
 
                 return null;
             }
@@ -321,6 +371,13 @@ class ApiWrapper implements ApiWrapperInterface
                     'Error from RetailCRM API: %s',
                     $exception->getMessage()
                 ));
+
+                if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                    $this->logger->error(sprintf(
+                        'Details: %s',
+                        implode(', ', $exception->getErrorResponse()->errors)
+                    ));
+                }
 
                 return null;
             }
@@ -371,6 +428,13 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
+
             $this->logger->error(sprintf(
                 'Customers: %s',
                 json_encode($externalIds)
@@ -401,6 +465,13 @@ class ApiWrapper implements ApiWrapperInterface
                 $exception->getMessage()
             ));
 
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
+
             $this->logger->error(sprintf(
                 'Orders: %s',
                 json_encode($externalIds)
@@ -427,6 +498,13 @@ class ApiWrapper implements ApiWrapperInterface
                 'Error from RetailCRM API: %s',
                 $exception->getMessage()
             ));
+
+            if (method_exists($exception, 'getErrorResponse') && count($exception->getErrorResponse()->errors) > 0) {
+                $this->logger->error(sprintf(
+                    'Details: %s',
+                    implode(', ', $exception->getErrorResponse()->errors)
+                ));
+            }
 
             $this->logger->error(sprintf(
                 'Request: %s',

@@ -20,6 +20,7 @@ parameters:
 
     crm.dentalink_id_field: '%env(string:CRM_DENTALINK_ID_FIELD)%'
     crm.site: '%env(string:CRM_SITE_CODE)%'
+    crm.payment_type: '%env(string:CRM_PAYMENT_TYPE)%'
 
     dentalink.api_url: 'https://api.dentalink.healthatom.com/api/v1/'
     dentalink.api_token: '%env(string:DENTALINK_API_TOKEN)%'
