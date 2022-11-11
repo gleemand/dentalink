@@ -8,13 +8,14 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class SinceDateTime implements SinceDateTimeInterface
 {
+    public const CITAS = 'citas';
+    public const PAYMENTS = 'payments';
+
     private Filesystem $filesystem;
-
     private string $file;
-
     private LoggerInterface $logger;
-
     private string $since;
+    private ContainerBagInterface $params;
 
     public function __construct(
         Filesystem $filesystem,
@@ -22,8 +23,13 @@ class SinceDateTime implements SinceDateTimeInterface
         LoggerInterface $logger
     ) {
         $this->filesystem = $filesystem;
-        $this->file = __DIR__ . '/../../../' . $params->get('app.since_datetime_file');
+        $this->params = $params;
         $this->logger = $logger;
+    }
+
+    public function init(string $entityType): void
+    {
+        $this->file = __DIR__ . '/../../../' . $this->params->get('app.since_datetime_file_' . $entityType);
     }
 
     private function now()

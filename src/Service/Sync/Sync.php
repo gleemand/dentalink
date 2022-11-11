@@ -5,6 +5,7 @@ namespace App\Service\Sync;
 use App\Service\Dentalink\ClientInterface;
 use App\Service\Dentalink\Factory\FactoryInterface;
 use App\Service\Simla\ApiWrapperInterface;
+use App\Service\SinceDateTime\SinceDateTime;
 use App\Service\SinceDateTime\SinceDateTimeInterface;
 use App\Service\Transformer\TransformerInterface;
 use Psr\Log\LoggerInterface;
@@ -35,6 +36,7 @@ class Sync implements SyncInterface
     {
         $this->logger->info('----------Sync START----------');
 
+        $this->sinceDateTime->init(SinceDateTime::CITAS);
         $since = $this->sinceDateTime->get();
         $this->sinceDateTime->set();
         $appointments = $this->dentalink->getAppointments($since);

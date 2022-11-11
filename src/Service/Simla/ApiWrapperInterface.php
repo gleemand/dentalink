@@ -4,6 +4,7 @@ namespace App\Service\Simla;
 
 use RetailCrm\Api\Model\Entity\Customers\Customer;
 use RetailCrm\Api\Model\Entity\Orders\Order;
+use RetailCrm\Api\Model\Entity\Orders\SerializedPayment;
 
 interface ApiWrapperInterface
 {
@@ -18,4 +19,6 @@ interface ApiWrapperInterface
 
     public function fixOrdersExternalIds(array $externalIds): void;
     public function fixCustomersExternalIds(array $externalIds): void;
+
+    public function paymentCreate(SerializedPayment $transformedPayment): void;
 }

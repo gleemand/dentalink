@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use App\Service\Sync\PaymentSyncInterface;
 use App\Service\Sync\SyncInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\LockableTrait;
@@ -18,10 +19,14 @@ class SyncCommand extends Command
 
     private SyncInterface $syncService;
 
+    private PaymentSyncInterface $paymentSync;
+
     public function __construct(
-        SyncInterface $syncService
+        SyncInterface $syncService,
+        PaymentSyncInterface $paymentSync
     ) {
         $this->syncService = $syncService;
+        $this->paymentSync = $paymentSync;
 
         parent::__construct();
     }
@@ -35,6 +40,7 @@ class SyncCommand extends Command
         }
 
         $this->syncService->run();
+        $this->paymentSync->run();
 
         $this->release();
 

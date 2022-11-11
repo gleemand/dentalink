@@ -37,6 +37,25 @@ class Client implements ClientInterface
         } while (isset($result['links']['next']));
     }
 
+    public function getPayments(string $since): \Generator
+    {
+        $url = 'pagos' . '?q={"fecha_creacion":{"gte":"' . $since . '"}}';
+
+        do {
+            $result = $this->sendRequest($url);
+
+            if (isset($result['data']) && count($result['data'])) {
+                foreach ($result['data'] as $payment) {
+                    yield $payment;
+                }
+            }
+
+            if (isset($result['links']['next'])) {
+                $url = $result['links']['next'];
+            }
+        } while (isset($result['links']['next']));
+    }
+
     public function getAppointment(int $id): ?array
     {
         return $this->sendRequest('citas/' . $id)['data'] ?? null;

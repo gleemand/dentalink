@@ -11,7 +11,9 @@ use RetailCrm\Api\Factory\ClientFactory;
 use RetailCrm\Api\Model\Entity\Customers\Customer;
 use RetailCrm\Api\Model\Entity\FixExternalRow;
 use RetailCrm\Api\Model\Entity\Orders\Order;
+use RetailCrm\Api\Model\Entity\Orders\SerializedPayment;
 use RetailCrm\Api\Model\Filter\Customers\CustomerHistoryFilter;
+use RetailCrm\Api\Model\Filter\Orders\OrderFilter;
 use RetailCrm\Api\Model\Filter\Orders\OrderHistoryFilterV4Type;
 use RetailCrm\Api\Model\Request\BySiteRequest;
 use RetailCrm\Api\Model\Request\Customers\CustomersCreateRequest;
@@ -22,6 +24,8 @@ use RetailCrm\Api\Model\Request\Orders\OrdersCreateRequest;
 use RetailCrm\Api\Model\Request\Orders\OrdersEditRequest;
 use RetailCrm\Api\Model\Request\Orders\OrdersFixExternalIdsRequest;
 use RetailCrm\Api\Model\Request\Orders\OrdersHistoryRequest;
+use RetailCrm\Api\Model\Request\Orders\OrdersPaymentsCreateRequest;
+use RetailCrm\Api\Model\Request\Orders\OrdersRequest;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 
 class ApiWrapper implements ApiWrapperInterface
@@ -46,6 +50,37 @@ class ApiWrapper implements ApiWrapperInterface
         $factory = new ClientFactory();
         $factory->setHttpClient($httpClient);
         $this->client = $factory->createClient($apiUrl, $apiKey);
+    }
+
+    public function getOrdersForCustomer(int $externalId): ?array
+    {
+        $request = new OrdersRequest();
+        $request->filter = new OrderFilter();
+        $request->filter->customerExternalId = $externalId;
+
+        try {
+            $response = $this->client->orders->list($request);
+        } catch (\Exception $exception) {
+            $this->logger->error(sprintf(
+                'Error from RetailCRM API: %s',
+                $exception->getMessage()
+            ));
+
+            $this->logger->error(sprintf(
+                'Orders of customer with externalId#%d',
+                $externalId
+            ));
+
+            return null;
+        }
+
+        $this->logger->debug(sprintf(
+            'Orders of customer with externalId#%d: %s',
+            $externalId,
+            json_decode()
+        ));
+
+        return $response->orders;
     }
 
     public function orderGet(int $externalId): ?Order
@@ -375,5 +410,32 @@ class ApiWrapper implements ApiWrapperInterface
         }
 
         $this->logger->info('Fixed external ids for orders');
+    }
+
+    public function paymentCreate(SerializedPayment $transformedPayment): void
+    {
+        $this->logger->debug('Create payment: ' . print_r($transformedPayment, true));
+
+        $request = new OrdersPaymentsCreateRequest();
+        $request->payment = $transformedPayment;
+        $request->site = $this->site;
+
+        try {
+            $response = $this->client->orders->paymentsCreate($request);
+        } catch (\Exception $exception) {
+            $this->logger->error(sprintf(
+                'Error from RetailCRM API: %s',
+                $exception->getMessage()
+            ));
+
+            $this->logger->error(sprintf(
+                'Request: %s',
+                json_encode($request)
+            ));
+
+            return;
+        }
+
+        $this->logger->info('Payment created: ' . $response->id);
     }
 }

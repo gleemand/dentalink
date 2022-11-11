@@ -7,7 +7,8 @@ imports:
     - { resource: resources/ }
 
 parameters:
-    app.since_datetime_file: 'var/sinceDateTime'
+    app.since_datetime_file_citas: 'var/citasSinceDateTime'
+    app.since_datetime_file_payments: 'var/paymentsSinceDateTime'
     app.since_id_file_customers: 'var/customersSinceId'
     app.since_id_file_orders: 'var/ordersSinceId'
 

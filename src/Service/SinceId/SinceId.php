@@ -12,13 +12,9 @@ class SinceId implements SinceIdInterface
     public const ORDERS = 'orders';
 
     private Filesystem $filesystem;
-
     private string $file;
-
     private LoggerInterface $logger;
-
     private string $since;
-
     private ContainerBagInterface $params;
 
     public function __construct(

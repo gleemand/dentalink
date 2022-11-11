@@ -6,17 +6,15 @@ use RetailCrm\Api\Model\Entity\Customers\Customer;
 use RetailCrm\Api\Model\Entity\Customers\CustomerAddress;
 use RetailCrm\Api\Model\Entity\Customers\CustomerPhone;
 use RetailCrm\Api\Model\Entity\Orders\Order;
+use RetailCrm\Api\Model\Entity\Orders\SerializedPayment;
 use RetailCrm\Api\Model\Entity\Orders\SerializedRelationCustomer;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 
 class Transformer implements TransformerInterface
 {
     private array $customFields;
-
     private string $site;
-
     private array $statusMapping;
-
     private string $dentalinkIdField;
 
     public function __construct(
@@ -131,6 +129,17 @@ class Transformer implements TransformerInterface
                 : null,
             'fecha_nacimiento' => $customer->birthday->format('Y-m-d'),
         ]);
+    }
+
+    public function crmPaymentTransform(array $pago, int $orderId): SerializedPayment
+    {
+        $payment = new SerializedPayment();
+        $payment->amount = $pago['monto_pago'] ?? null;
+        $payment->paidAt = new \DateTime($pago['fecha_creacion'] ?? null);
+        $payment->comment = ($pago['medio_pago'] ?? null) . ' ' . ($pago['numero_referencia'] ?? null);
+        $payment->order->id = $orderId;
+
+        return $payment;
     }
 
     public function dentalinkOrderTransform(Order $order): array
