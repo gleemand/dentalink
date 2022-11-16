@@ -55,7 +55,7 @@ class SinceDateTime implements SinceDateTimeInterface
     public function get(): string
     {
         $since = (new \DateTime())
-            ->sub(new \DateInterval('P1M'))
+            ->sub(new \DateInterval('P7D'))
             ->format('Y-m-d H:i:s');
 
         if ($this->filesystem->exists($this->file)) {

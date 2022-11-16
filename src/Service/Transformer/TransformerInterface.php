@@ -8,8 +8,8 @@ use RetailCrm\Api\Model\Entity\Orders\Order;
 interface TransformerInterface
 {
     public function crmCustomerTransform(array $patient): Customer;
-    public function dentalinkCustomerTransform(Customer $customer): array;
+    public function dentalinkCustomerTransform(array $customer): array;
 
     public function crmOrderTransform(array $appointment): Order;
-    public function dentalinkOrderTransform(Order $order): array;
+    public function dentalinkOrderTransform(array $order): array;
 }
