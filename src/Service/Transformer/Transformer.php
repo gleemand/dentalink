@@ -102,7 +102,7 @@ class Transformer implements TransformerInterface
         return $order;
     }
 
-    public function dentalinkCustomerTransform(Customer $customer): array
+    public function dentalinkCustomerTransform(array $customer): array
     {
         $sex = null;
 
@@ -116,25 +116,25 @@ class Transformer implements TransformerInterface
         }
 
         $patient = [
-            'id' => $customer->externalId,
-            'nombre' => $customer->firstName,
-            'apellidos' => $customer->lastName,
-            'sexo' => $customer->sex ? mb_strtoupper(mb_substr($customer->sex, 0, 1)) : null,
+            'id' => $customer['externalId'] ?? null,
+            'nombre' => $customer['first_name'] ?? null,
+            'apellidos' => $customer['last_name'] ?? null,
+            'sexo' => isset($customer['sex']) ? mb_strtoupper(mb_substr($customer['sex'], 0, 1)) : null,
             'id_genero' => $sex,
-            'direccion' => $customer->address->text,
-            'ciudad' => $customer->address->city,
-            'email' => $customer->email,
-            'telefono' => count($customer->phones)
+            'direccion' => ($customer['address'] ?? null)['text'] ?? null,
+            'ciudad' => ($customer['address'] ?? null)['city'] ?? null,
+            'email' => $customer['email'] ?? null,
+            'telefono' => count($customer['phones'] ?? [])
                 ? (int) filter_var(
-                    reset($customer->phones),
+                    reset($customer['phones']),
                     FILTER_SANITIZE_NUMBER_INT
                 )
                 : null,
-            'fecha_nacimiento' => $customer->birthday->format('Y-m-d'),
+            'fecha_nacimiento' => $customer['birthday'] ?? null,
         ];
 
         foreach ($this->customFields as $dentalinkCode => $crmCode) {
-            $patient[$dentalinkCode] = $order->customFields[$crmCode] ?? null;
+            $patient[$dentalinkCode] = ($customer['customFields'] ?? null)[$crmCode] ?? null;
         }
 
         return array_filter($patient);
@@ -153,17 +153,17 @@ class Transformer implements TransformerInterface
         return $payment;
     }
 
-    public function dentalinkOrderTransform(Order $order): array
+    public function dentalinkOrderTransform(array $order): array
     {
         $cita = [
-            'id' => $order->externalId,
-            'id_estado' => array_flip($this->statusMapping)[$order->status] ?? null,
-            'id_paciente' => $order->customer->externalId,
-            'comentario' => $order->managerComment,
+            'id' => $order['externalId'] ?? null,
+            'id_estado' => array_flip($this->statusMapping)[$order['status'] ?? null] ?? null,
+            'id_paciente' => ($order['customer'] ?? null)['externalId'] ?? null,
+            'comentario' => $order['managerComment'] ?? null,
         ];
 
         foreach ($this->customFields as $dentalinkCode => $crmCode) {
-            $cita[$dentalinkCode] = $order->customFields[$crmCode] ?? null;
+            $cita[$dentalinkCode] = ($order['customFields'] ?? null)[$crmCode] ?? null;
         }
 
         return array_filter($cita);

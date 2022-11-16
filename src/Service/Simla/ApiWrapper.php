@@ -84,12 +84,12 @@ class ApiWrapper implements ApiWrapperInterface
         return $response->orders;
     }
 
-    public function orderGet(int $externalId): ?Order
+    public function orderGet(int $externalId, bool $byId = false): ?Order
     {
         try {
             $response = $this->client->orders->get(
                 $externalId,
-                new BySiteRequest(ByIdentifier::EXTERNAL_ID, $this->site)
+                new BySiteRequest($byId ? ByIdentifier::ID : ByIdentifier::EXTERNAL_ID, $this->site)
             );
         } catch (\Exception $exception) {
             $this->logger->error(sprintf(
@@ -105,7 +105,8 @@ class ApiWrapper implements ApiWrapperInterface
             }
 
             $this->logger->error(sprintf(
-                'Order: externalId#%d',
+                'Order: %s#%d',
+                $byId ? 'id' : 'externalId',
                 $externalId
             ));
 
@@ -113,7 +114,8 @@ class ApiWrapper implements ApiWrapperInterface
         }
 
         $this->logger->debug(sprintf(
-            'Order with externalId#%d exists',
+            'Order with %s#%d exists',
+            $byId ? 'id' : 'externalId',
             $externalId,
         ));
 
@@ -189,12 +191,12 @@ class ApiWrapper implements ApiWrapperInterface
         $this->logger->info('Order edited: externalId#' . $order->externalId);
     }
 
-    public function customerGet(int $externalId): ?Customer
+    public function customerGet(int $externalId, bool $byId = false): ?Customer
     {
         try {
             $response = $this->client->customers->get(
                 $externalId,
-                new BySiteRequest(ByIdentifier::EXTERNAL_ID, $this->site)
+                new BySiteRequest($byId ? ByIdentifier::ID : ByIdentifier::EXTERNAL_ID, $this->site)
             );
         } catch (\Exception $exception) {
             $this->logger->error(sprintf(
@@ -210,7 +212,8 @@ class ApiWrapper implements ApiWrapperInterface
             }
 
             $this->logger->error(sprintf(
-                'Customer: externalId#%d',
+                'Customer: %s#%d',
+                $byId ? 'id' : 'externalId',
                 $externalId
             ));
 
@@ -218,7 +221,8 @@ class ApiWrapper implements ApiWrapperInterface
         }
 
         $this->logger->debug(sprintf(
-            'Customer with externalId#%d exists',
+            'Customer %s#%d exists',
+            $byId ? 'id' : 'externalId',
             $externalId,
         ));
 
@@ -294,7 +298,7 @@ class ApiWrapper implements ApiWrapperInterface
         $this->logger->info('Customer edited: externalId#' . $customer->externalId);
     }
 
-    public function customersHistory(int $sinceId): ?\Generator
+    public function customersHistory(?int $sinceId): ?\Generator
     {
         $request = new CustomersHistoryRequest();
         $request->filter = new CustomerHistoryFilter();
@@ -303,9 +307,7 @@ class ApiWrapper implements ApiWrapperInterface
         if ($sinceId) {
             $request->filter->sinceId = $sinceId;
         } else {
-            $request->filter->startDate = new \DateTime(
-                'yesterday'
-            );
+            $request->filter->startDate = new \DateTime('now');
         }
 
         do {
@@ -347,7 +349,7 @@ class ApiWrapper implements ApiWrapperInterface
         } while ($response->pagination->currentPage < $response->pagination->totalPageCount);
     }
 
-    public function ordersHistory(int $sinceId): ?\Generator
+    public function ordersHistory(?int $sinceId): ?\Generator
     {
         $request = new OrdersHistoryRequest();
         $request->filter = new OrderHistoryFilterV4Type();
@@ -356,9 +358,7 @@ class ApiWrapper implements ApiWrapperInterface
         if ($sinceId) {
             $request->filter->sinceId = $sinceId;
         } else {
-            $request->filter->startDate = new \DateTime(
-                'yesterday'
-            );
+            $request->filter->startDate = new \DateTime('now');
         }
 
         do {
@@ -409,7 +409,7 @@ class ApiWrapper implements ApiWrapperInterface
             ) && !$change->deleted;
     }
 
-    public function fixOrdersExternalIds(array $externalIds): void
+    public function fixCustomersExternalIds(array $externalIds): void
     {
         $this->logger->debug('Fix external id for customers: ' . print_r($externalIds, true));
 
@@ -418,6 +418,10 @@ class ApiWrapper implements ApiWrapperInterface
 
         foreach ($externalIds as $id => $externalId) {
             $request->customers[] = new FixExternalRow($id, $externalId);
+        }
+
+        if (!count($request->customers)) {
+            return;
         }
 
         try {
@@ -446,15 +450,19 @@ class ApiWrapper implements ApiWrapperInterface
         $this->logger->info('Fixed external ids for customers');
     }
 
-    public function fixCustomersExternalIds(array $externalIds): void
+    public function fixOrdersExternalIds(array $externalIds): void
     {
         $this->logger->debug('Fix external id for orders: ' . print_r($externalIds, true));
 
-        $request            = new OrdersFixExternalIdsRequest();
+        $request = new OrdersFixExternalIdsRequest();
         $request->orders = [];
 
         foreach ($externalIds as $id => $externalId) {
             $request->orders[] = new FixExternalRow($id, $externalId);
+        }
+
+        if (!count($request->orders)) {
+            return;
         }
 
         try {

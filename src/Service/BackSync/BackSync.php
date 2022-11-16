@@ -12,6 +12,14 @@ use Psr\Log\LoggerInterface;
 
 class BackSync implements BackSyncInterface
 {
+    private const FIELDS = [
+        'order' => [
+            'status',
+            'manager_comment',
+        ],
+        'customer' => [],
+    ];
+
     private ClientInterface $dentalink;
     private ApiWrapperInterface $simla;
     private SinceIdInterface $sinceId;
@@ -50,34 +58,18 @@ class BackSync implements BackSyncInterface
 
         $this->sinceId->init(SinceId::CUSTOMERS);
         $sinceId = $this->sinceId->get();
-        $this->sinceId->set($sinceId);
         $history = $this->simla->customersHistory($sinceId);
 
-        $ids = [];
+        $customers = $this->assembleHistory($history, 'customer');
 
-        if (is_iterable($history)) {
-            foreach ($history as $change) {
-                $ids[$change->customer->id] = $change->customer->id;
-
-                $this->sinceId->set($change->id);
-                $this->sinceId->save();
-            }
-        }
-
-        foreach ($ids as $id) {
-            $customer = $this->simla->customerGet($id);
-
-            if (!$customer) {
-                continue;
-            }
-
+        foreach ($customers as $customer) {
             $this->logger->debug('Customer: ' . print_r($customer, true));
 
             $patient = $this->transformer->dentalinkCustomerTransform($customer);
 
-            if (!$customer->externalId) {
+            if (!$customer['externalId']) {
                 $createdPatient = $this->dentalink->createPatient($patient);
-                $this->externalIds[$customer->id] = $createdPatient->id;
+                $this->externalIds[$customer->id] = $createdPatient['id'];
             } else {
                 $this->dentalink->editPatient($patient);
             }
@@ -92,39 +84,60 @@ class BackSync implements BackSyncInterface
 
         $this->sinceId->init(SinceId::ORDERS);
         $sinceId = $this->sinceId->get();
-        $this->sinceId->set($sinceId);
         $history = $this->simla->ordersHistory($sinceId);
 
-        $ids = [];
+        $orders = $this->assembleHistory($history, 'order');
 
-        if (is_iterable($history)) {
-            foreach ($history as $change) {
-                $ids[$change->order->id] = $change->order->id;
-
-                $this->sinceId->set($change->id);
-                $this->sinceId->save();
-            }
-        }
-
-        foreach ($ids as $id) {
-            $order = $this->simla->orderGet($id);
-
-            if (!$order) {
-                continue;
-            }
-
+        foreach ($orders as $order) {
             $this->logger->debug('Order: ' . print_r($order, true));
 
             $cita = $this->transformer->dentalinkOrderTransform($order);
 
-            if (!$order->externalId) {
+            if (!$order['externalId']) {
                 $createdCita = $this->dentalink->createCita($cita);
-                $this->externalIds[$order->id] = $createdCita->id;
+                $this->externalIds[$order->id] = $createdCita['id'];
             } else {
-                $this->dentalink->editPatient($cita);
+                $this->dentalink->editCita($cita);
             }
         }
 
         $this->simla->fixOrdersExternalIds($this->externalIds);
+    }
+
+    private function assembleHistory(?\Generator $history, string $entityType)
+    {
+        $assembledHistory = [];
+
+        foreach ($history as $change) {
+            if ($change->created) {
+                $assembledHistory[$change->order->id] = $change->{$entityType};
+            }
+
+            if ($change->field && ($entityType === 'customer' || in_array($change->field, self::FIELDS[$entityType]))) {
+                if ($change->field === 'status') {
+                    $assembledHistory[$change->{$entityType}->id][$change->field] = $change->newValue['code'];
+                } elseif (false !== strripos($change->field, 'custom_')) {
+                    $assembledHistory[$change->{$entityType}->id]['customFields'][str_replace('custom_', '', $change->field)] = $change->newValue;
+                } elseif (false !== strripos($change->field, 'address.')) {
+                    $assembledHistory[$change->{$entityType}->id]['address'][str_replace('address.', '', $change->field)] = $change->newValue;
+                } else {
+                    $assembledHistory[$change->{$entityType}->id][$change->field] = $change->newValue;
+                }
+
+            }
+
+            if ($change->{$entityType}->externalId && isset($assembledHistory[$change->{$entityType}->id])) {
+                $assembledHistory[$change->{$entityType}->id]['externalId'] = $change->{$entityType}->externalId;
+            }
+
+            if (isset($change->deleted, $assembledHistory[$change->{$entityType}->id])) {
+                unset($assembledHistory[$change->{$entityType}->id]);
+            }
+
+            $this->sinceId->set($change->id);
+            $this->sinceId->save();
+        }
+
+        return $assembledHistory;
     }
 }

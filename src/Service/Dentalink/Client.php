@@ -83,6 +83,8 @@ class Client implements ClientInterface
 
     public function editCita(array $cita): ?array
     {
+        unset($cita['id_paciente']);
+
         return $this->sendRequest('citas/' . $cita['id'], 'PUT', $cita)['data'] ?? null;
     }
 
@@ -118,13 +120,17 @@ class Client implements ClientInterface
 
     private function sendRequest(string $url, ?string $method = 'GET', ?array $data = null)
     {
+        $options = array_filter([
+            'headers' => [
+                'Authorization' => 'Token ' . $this->token
+            ],
+            'json' => $data,
+        ]);
+
+        $this->logger->debug(print_r(array_merge([$method, $url], $options), true));
+
         try {
-            $response = $this->httpClient->request($method, $url, array_filter([
-                'headers' => [
-                    'Authorization' => 'Token ' . $this->token
-                ],
-                'body' => $data,
-            ]));
+            $response = $this->httpClient->request($method, $url, $options);
         } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
 
