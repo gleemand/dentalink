@@ -48,23 +48,29 @@ class PaymentSync implements PaymentSyncInterface
         $payments = $this->dentalink->getPayments($since);
 
         foreach ($payments as $payment) {
+            $this->logger->debug('Payment: ' . print_r($payment, true));
+
             if (!$payment['monto_pago'] || !$payment['id_paciente']) {
                 continue;
             }
 
-            $orders = $this->simla->getOrdersForCustomer($payment['id_paciente']);
+            $orders = $this->simla->getOrdersForCustomer($payment['id_paciente'], [
+                $this->customFields['fecha'] => [
+                    'max' => (new \DateTime('now'))->format('Y-m-d'),
+                ],
+            ]);
+            $this->logger->debug('Orders of customer: ' . print_r($orders, true));
 
             if (!$orders || !count($orders)) {
                 continue;
             }
 
             $order = $this->getLastOrder($orders);
+            $this->logger->debug('Last order: ' . print_r($order, true));
 
             if (!$order) {
                 continue;
             }
-
-            $this->logger->debug('Last order: ' . print_r($order, true));
 
             $transformedPayment = $this->transformer->crmPaymentTransform($payment, $order->id);
 
@@ -83,15 +89,25 @@ class PaymentSync implements PaymentSyncInterface
                 continue;
             }
 
-            if ($lastOrder && $order->customFields[$this->customFields['fecha']] > new \DateTime('now')) {
-                continue;
-            }
+            $this->logger->debug('Processing order: ' . print_r($order->customFields, true));
 
-            if (!$lastOrder || $order->customFields[$this->customFields['fecha']] > $lastOrder->customFields[$this->customFields['fecha']]) {
+            if (
+                !$lastOrder
+                || new \DateTime($order->customFields[$this->customFields['fecha']])
+                    > new \DateTime($lastOrder->customFields[$this->customFields['fecha']])
+            ) {
                 $lastOrder = $order;
-            } elseif ($order->customFields[$this->customFields['fecha']] === $lastOrder->customFields[$this->customFields['fecha']]) {
-                if ($order->customFields[$this->customFields['hora_inicio']] > $lastOrder->customFields[$this->customFields['hora_inicio']]) {
+                $this->logger->debug('1 Saving last order: ' . print_r($order->customFields, true));
+            } elseif (
+                new \DateTime($order->customFields[$this->customFields['fecha']])
+                === new \DateTime($lastOrder->customFields[$this->customFields['fecha']])
+            ) {
+                if (
+                    filter_var($order->customFields[$this->customFields['hora_inicio']], FILTER_SANITIZE_NUMBER_INT)
+                        > filter_var($lastOrder->customFields[$this->customFields['hora_inicio']], FILTER_SANITIZE_NUMBER_INT)
+                ) {
                     $lastOrder = $order;
+                    $this->logger->debug('2 Saving last order: ' . print_r($order->customFields, true));
                 }
             }
         }

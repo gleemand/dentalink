@@ -43,7 +43,7 @@ class Transformer implements TransformerInterface
         $customer->externalId   = $patient['id'];
         $customer->firstName    = $patient['nombre'] ?? null;
         $customer->lastName     = $patient['apellidos'] ?? null;
-        $customer->email        = strtolower($patient['email'] ?? 'nomail@nomail.com');
+        $customer->email        = $patient['email'] ?? null;
         $customer->site         = $this->site;
         $customer->createdAt    = !empty($patient['fecha_afiliacion'])
             ? new \DateTime($patient['fecha_afiliacion'])
@@ -81,7 +81,7 @@ class Transformer implements TransformerInterface
         $order->lastName        = $appointment['patient']['apellidos'] ?? null;
         $order->phone           = $appointment['patient']['celular'] ?? null;
         $order->additionalPhone = $appointment['patient']['telefono'] ?? null;
-        $order->email           = strtolower($appointment['patient']['email'] ?? '');
+        $order->email           = $appointment['patient']['email'] ?? null;
         $order->site            = $this->site;
         $order->status          = $this->statusMapping[$appointment['id_estado']] ?? null;
         $order->customer        = SerializedRelationCustomer::withExternalId(
@@ -117,8 +117,8 @@ class Transformer implements TransformerInterface
 
         $patient = [
             'id' => $customer['externalId'] ?? null,
-            'nombre' => $customer['first_name'] ?? null,
-            'apellidos' => $customer['last_name'] ?? null,
+            'nombre' => $customer['firstName'] ?? null,
+            'apellidos' => $customer['lastName'] ?? null,
             'sexo' => isset($customer['sex']) ? mb_strtoupper(mb_substr($customer['sex'], 0, 1)) : null,
             'id_genero' => $sex,
             'direccion' => ($customer['address'] ?? null)['text'] ?? null,
@@ -149,6 +149,7 @@ class Transformer implements TransformerInterface
         $payment->comment = ($pago['medio_pago'] ?? null) . ' ' . ($pago['numero_referencia'] ?? null);
         $payment->order = new SerializedEntityOrder();
         $payment->order->id = $orderId;
+        $payment->status = 'paid';
 
         return $payment;
     }

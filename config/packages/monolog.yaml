@@ -6,7 +6,8 @@ when@dev:
     monolog:
         handlers:
             main:
-                type: stream
+                type: rotating_file
+                max_files: 30
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
                 level: debug
                 channels: ["!event"]
@@ -28,7 +29,8 @@ when@test:
     monolog:
         handlers:
             main:
-                type: stream
+                type: rotating_file
+                max_files: 30
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
                 level: info
                 channels: ["!event"]
@@ -42,7 +44,8 @@ when@prod:
     monolog:
         handlers:
             main:
-                type: stream
+                type: rotating_file
+                max_files: 30
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
                 formatter: monolog.formatter.pretty
                 level: info

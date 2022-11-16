@@ -52,11 +52,12 @@ class ApiWrapper implements ApiWrapperInterface
         $this->client = $factory->createClient($apiUrl, $apiKey);
     }
 
-    public function getOrdersForCustomer(int $externalId): ?array
+    public function getOrdersForCustomer(int $externalId, array $customFields): ?array
     {
         $request = new OrdersRequest();
         $request->filter = new OrderFilter();
         $request->filter->customerExternalId = $externalId;
+        $request->filter->customFields = $customFields;
 
         try {
             $response = $this->client->orders->list($request);
